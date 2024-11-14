@@ -1,24 +1,26 @@
-from flask import Flask, jsonify
+import requests
 
-app = Flask(__name__)
+def hae_saa(paikkakunta, api_key):
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={paikkakunta}&appid={api_key}&units=metric"
+    response = requests.get(url)
 
-lentokentat = {
-    "EFHK": {"Name": "Helsinki Vantaa Airport", "Municipality": "Helsinki"},
-    "EGLL": {"Name": "London Heathrow Airport", "Municipality": "London"},
-    "EDDB": {"Name": "Berlin Brandenburg Airport", "Municipality": "Berlin"},
-    "JFK": {"Name": "John F. Kennedy International Airport", "Municipality": "New York"},
-    "LAX": {"Name": "Los Angeles International Airport", "Municipality": "Los Angeles"},
-}
-
-@app.route('/kenttä/<icao>', methods=['GET'])
-def kentta(icao):
-
-    if icao in lentokentat:
-        kentta_tiedot = lentokentat[icao]
-        kentta_tiedot["ICAO"] = icao
-        return jsonify(kentta_tiedot)
+    if response.status_code == 200:
+        data = response.json()
+        saatilat = data['weather'][0]['description']
+        temperatura = data['main']['temp']
+        return saatilat, temperatura
     else:
-        return jsonify({"error": "Lentokenttää ei löytynyt"}), 404
+        print("Virhe:", response.json())
+        return None, None
 
-if __name__ == '__main__':
-    app.run(use_reloader=True, host='127.0.0.1', port=3000)
+if __name__ == "__main__":
+    api_key = "avan_api_key"
+    paikkakunta = input("Anna paikkakunnan nimi: ")
+
+    saatilat, temperatura = hae_saa(paikkakunta, api_key)
+
+    if saatilat is not None:
+        print(f"Säätilanne: {saatilat.capitalize()}")
+        print(f"Lämpötila: {temperatura} °C")
+    else:
+        print("Säätiedot eivät ole saatavilla. Tarkista paikkakunnan nimi.")
